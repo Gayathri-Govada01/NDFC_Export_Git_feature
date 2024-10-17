@@ -1,0 +1,500 @@
+##template properties
+name =Default_Network_Universal;
+description = Default Network Universal Template;
+tags =network;
+userDefined = true;
+supportedPlatforms = All,IOS-XE;
+templateType = PROFILE;
+templateSubType = VXLAN;
+contentType = TEMPLATE_CLI;
+implements = ;
+dependencies = ;
+published = false;
+imports = ;
+##
+##template variables
+#    Copyright (c) 2018-2023 by Cisco Systems, Inc.
+#    All rights reserved.
+ 
+@(IsMandatory=false, IsGateway=true, DisplayName="IPv4 Gateway/NetMask", Description="example 192.0.2.1/24", IsMsoManaged=true)
+ipV4AddressWithSubnet gatewayIpAddress;
+
+@(IsMandatory=true, Section="Attach/Hidden", IsVlanId=true, IsMsoManaged=true )
+integer vlanId;
+ 
+@(IsMandatory=true, Section="Hidden", IsSegmentId=true, IsMsoManaged=true)
+integer segmentId;
+ 
+@(IsMandatory=true, DisplayName="NVE Identifier", Section="Attach/Hidden", IsNveId=true)
+integer nveId{
+   defaultValue=1;
+   };
+
+@(IsMandatory=false, DisplayName="Network Type", Section="Hidden")
+string type;
+
+@(IsMandatory=false, Section="Hidden",IsVrfName=true, IsMsoManaged=true)
+string vrfName;
+ 
+@(IsMandatory=false, DisplayName="IPv6 Gateway/Prefix List", Description="example 2001:db8::1/64,2001:db9::1/64", IsMsoManaged=true)
+string[] gatewayIpV6Address;
+ 
+@(IsMandatory=false, DisplayName="Layer 2 Only", IsLayer2Only=true, IsMsoManaged=true)
+boolean isLayer2Only{
+   defaultValue=false;
+   };
+
+# NX-OS Specific
+@(IsMandatory=false, DisplayName="ARP Suppression", Section="Advanced", Description="ARP suppression is only supported if SVI is present when Layer-2-Only is not enabled. NX-OS Specific", IsMsoManaged=true)
+boolean suppressArp;
+
+#this should be derived from global fabric settings
+@(IsMandatory=false, DisplayName="Ingress Replication", Section="Advanced", IsIngressReplication=true, ReadOnly=true, Description="Read-only per network, Fabric-wide setting", IsFabricInstance=true)
+boolean enableIR{
+   defaultValue=false;
+   };
+
+#this should be derived from global fabric settings
+@(IsMandatory=false, DisplayName="Multicast Group Address", Section="Advanced", IsMultiCastGroupAddress=true, IsFabricInstance=true)
+ipAddress mcastGroup;
+
+@(IsMandatory="vrfDhcp!=null", IsFabricInstance=true, IsMsoManaged=true, Section="Hidden")
+ipAddress dhcpServerAddr1;
+@(IsMandatory=false, IsFabricInstance=true, IsMsoManaged=true, Section="Hidden")
+string vrfDhcp{
+    minLength = 0;
+    maxLength = 32;
+};
+@(IsMandatory=false, IsFabricInstance=true, IsMsoManaged=true, Section="Hidden")
+ipAddress dhcpServerAddr2;
+@(IsMandatory="dhcpServerAddr2!=null", IsFabricInstance=true, IsMsoManaged=true, Section="Hidden")
+string vrfDhcp2{
+    minLength = 0;
+    maxLength = 32;
+};
+@(IsMandatory=false, IsFabricInstance=true, IsMsoManaged=true, Section="Hidden")
+ipAddress dhcpServerAddr3;
+@(IsMandatory="dhcpServerAddr3!=null", IsFabricInstance=true, IsMsoManaged=true, Section="Hidden")
+string vrfDhcp3{
+    minLength = 0;
+    maxLength = 32;
+};
+
+@(IsMandatory=false, DisplayName="DHCP Relay Server Information (Max 16)", Section="Advanced", IsFabricInstance=true, IsMsoManaged=true)
+struct ITEM {
+  @(IsMandatory=true, DisplayName="Server IP Address")
+  ipAddress srvrAddr;
+  @(IsMandatory=true, DisplayName="Server VRF", Description = "If management vrf, enter 'management'. If default/global vrf, enter 'default'.")
+  string srvrVrf {
+    minLength = 0;
+    maxLength = 32;
+  };
+} dhcpServers[];
+
+@(IsMandatory=false, DisplayName="Loopback ID for DHCP Relay interface (Min:0, Max:1023)", Section="Advanced", IsFabricInstance=true, IsMsoManaged=true)
+integer loopbackId {
+  min = 0;
+  max = 1023;
+};
+
+@(IsMandatory=false, DisplayName="VLAN Name", Description = "If > 32 chars, enable 'system vlan long-name' for NX-OS, disable VTPv1 and VTPv2 or switch to VTPv3 for IOS XE", IsMsoManaged=true)
+string vlanName {
+  regularExpr=^[^\?,\\,\s]*$;
+  minLength = 0;
+  maxLength = 128;
+};
+
+@(IsMandatory=false, DisplayName="Interface Description", IsMsoManaged=true)
+string intfDescription;
+
+@(IsMandatory=false, DisplayName="Network Name (should be hidden)", Section="Hidden", IsNetworkName=true)
+string networkName;
+
+# NX-OS Specific
+@(IsMandatory=false, DisplayName="MTU for L3 interface", Description="68-9216. NX-OS Specific", IsMsoManaged=true)
+integer mtu {
+  min = 68;
+  max = 9216;
+};
+
+# NX-OS Specific
+@(IsMandatory=false, DisplayName="Routing Tag", Description="0-4294967295. NX-OS Specific", Section="Advanced", IsMsoManaged=true)
+long tag {
+  min = 0;
+  max = 4294967295;
+  defaultValue = 12345;
+};
+
+@(IsMandatory=false, DisplayName="IPv4 TRM Enable", Description="Enable IPv4 Tenant Routed Multicast", Section="Advanced", IsFabricInstance=true, IsMsoManaged=true)
+boolean trmEnabled;
+
+@(IsMandatory=false, IsShow="trmEnabled==true", DisplayName="IGMP Version", Description="Version 2-3 for NX-OS, 1-3 for IOS XE. 'ip igmp version' command is generated if version is 1 or 3 (switch default is 2)", Section="Advanced", IsFabricInstance=true, IsMsoManaged=true)
+enum igmpVersion
+{
+validValues=1,2,3;
+defaultValue=2;
+};
+
+@(IsMandatory=false, DisplayName="IPv6 TRM Enable", Description="Enable IPv6 Tenant Routed Multicast", Section="Advanced", IsFabricInstance=true, IsMsoManaged=true)
+boolean trmV6Enabled;
+
+@(IsMandatory=false, IsGateway=true, DisplayName="IPv4 Secondary GW1", Description="example 192.0.2.1/24", IsMsoManaged=true)
+ipV4AddressWithSubnet secondaryGW1;
+@(IsMandatory=false, IsGateway=true, DisplayName="IPv4 Secondary GW2", Description="example 192.0.2.1/24", IsMsoManaged=true)
+ipV4AddressWithSubnet secondaryGW2;
+@(IsMandatory=false, IsGateway=true, DisplayName="IPv4 Secondary GW3", Description="example 192.0.2.1/24", IsMsoManaged=true)
+ipV4AddressWithSubnet secondaryGW3;
+@(IsMandatory=false, IsGateway=true, DisplayName="IPv4 Secondary GW4", Description="example 192.0.2.1/24", IsMsoManaged=true)
+ipV4AddressWithSubnet secondaryGW4;
+
+# NX-OS Specific
+@(IsMandatory=false, DisplayName="L2 VNI Route-Target Both Enable", Description="NX-OS Specific", Section="Advanced")
+boolean rtBothAuto {
+    defaultValue = false;
+};
+
+# NX-OS Specific
+@(IsMandatory=false, DisplayName="Enable Netflow", Description="Netflow is supported only if it is enabled on fabric. For NX-OS only", Section="Advanced", IsFabricInstance=true)
+boolean ENABLE_NETFLOW {
+    defaultValue = false;
+};
+
+# NX-OS Specific
+@(IsMandatory=false, IsShow="ENABLE_NETFLOW==true",DisplayName="Interface Vlan Netflow Monitor", Description="Applicable only if 'Layer 2 Only' is not enabled. Provide monitor name defined in fabric setting for Layer 3 Record. For NX-OS only", Section="Advanced", IsFabricInstance=true)
+string SVI_NETFLOW_MONITOR;
+
+# NX-OS Specific
+@(IsMandatory=false, IsShow="ENABLE_NETFLOW==true",DisplayName="Vlan Netflow Monitor", Description="Provide monitor name defined in fabric setting for Layer 3 Record. For NX-OS only", Section="Advanced", IsFabricInstance=true)
+string VLAN_NETFLOW_MONITOR;
+
+@(IsMandatory=false, IsHidden=true, IsInstance=true , IsVPC=true)
+boolean isVPC {
+    defaultValue = false;
+};
+
+@(IsMandatory=false, IsHidden=true)
+enum platformType {
+validValues=Nexus,IOSXE;
+defaultValue=Nexus;
+};
+
+# XE specific parameters
+@(IsMandatory=false, DisplayName="Anycast MAC Address Defined in fabric", IsHidden=true)
+macAddress anycastGMac;
+
+@(IsMandatory=false, IsInternal=true)
+string gen_address;
+
+@(IsMandatory=false, IsInternal=true)
+string gen_mask;
+
+@(IsInternal=true)
+boolean flagSet;
+
+@(IsMandatory=false, IsInternal=true)
+string isIpDhcpRelay;
+
+@(IsMandatory=false, IsInternal=true)
+string isIp6DhcpRelay;
+
+@(IsMandatory=false, IsInstance=true, IsHidden=true, Description="NX-OS Specific")
+boolean deviceSupportSVI {
+defaultValue=true;
+};
+
+@(IsMandatory=false, IsHidden=true, IsInstance=true, Description="Always Disable ip redirects, NX-OS config-profile Specific")
+boolean disableIpRedirects {
+defaultValue=false;
+};
+
+##
+ 
+##template content
+
+if ($$platformType$$ != "IOSXE") {
+vlan $$vlanId$$
+  vn-segment $$segmentId$$
+ if ($$vlanName$$ != "") {
+  name $$vlanName$$
+ }
+ if ($$type$$ == "primary" || $$type$$ == "Primary") {
+  private-vlan primary
+ }
+
+if ($$deviceSupportSVI$$ != "true") {
+}
+else {
+if ($$isLayer2Only$$ != "true") {
+interface Vlan$$vlanId$$
+ if ($$intfDescription$$ != "") {
+  description $$intfDescription$$
+ }
+ 
+ if($$vrfName$$ != "" ){
+  vrf member $$vrfName$$
+ }
+
+ if($$isVPC$$ == "true") {
+  no ip redirects
+  no ipv6 redirects
+ }
+ else {
+  if ($$secondaryGW1$$ != "" || $$secondaryGW2$$ != "" || $$secondaryGW3$$ != "" || $$secondaryGW4$$ != "") {
+  no ip redirects
+  }
+  else {
+  if ($$disableIpRedirects$$ == "true") {
+  no ip redirects
+   }
+  }
+ }
+ 
+if($$gatewayIpAddress$$ != "" ){
+ if ($$tag$$ == "") {
+  ip address $$gatewayIpAddress$$
+ }
+ else {
+  ip address $$gatewayIpAddress$$ tag $$tag$$
+ }
+if($$secondaryGW1$$ != "" ){
+ if ($$tag$$ == "") {
+  ip address $$secondaryGW1$$ secondary
+ }
+ else {
+  ip address $$secondaryGW1$$ secondary tag $$tag$$
+ }
+}
+
+if($$secondaryGW2$$ != "" ){
+ if ($$tag$$ == "") {
+  ip address $$secondaryGW2$$ secondary
+ }
+ else {
+  ip address $$secondaryGW2$$ secondary tag $$tag$$
+ }
+}
+if($$secondaryGW3$$ != "" ){
+ if ($$tag$$ == "") {
+  ip address $$secondaryGW3$$ secondary
+ }
+ else {
+  ip address $$secondaryGW3$$ secondary tag $$tag$$
+ }
+}
+if($$secondaryGW4$$ != "" ){
+ if ($$tag$$ == "") {
+  ip address $$secondaryGW4$$ secondary
+ }
+ else {
+  ip address $$secondaryGW4$$ secondary tag $$tag$$
+ }
+}
+ if ($$trmEnabled$$ == "true") {
+  ip pim sparse-mode
+  ip pim neighbor-policy NONE*
+  if ($$igmpVersion$$ == "3") {
+  ip igmp version 3
+  }
+ }
+}
+
+if($$gatewayIpV6Address$$ != "" ){
+foreach ITEM in $$gatewayIpV6Address$$ {
+ if ($$tag$$ == "") {
+  ipv6 address @ITEM
+ }
+ else {
+  ipv6 address @ITEM tag $$tag$$
+ }
+ }
+ if ($$trmV6Enabled$$ == "true") {
+  ipv6 pim sparse-mode
+ }
+}
+
+if($$dhcpServers$$ != "" ) {
+ foreach ITEM in $$dhcpServers$$ {
+  if (@ITEM.srvrVrf != "" && @ITEM.srvrVrf != $$vrfName$$) {
+   if (@ITEM.srvrAddr contains ":") {
+       $$isIp6DhcpRelay$$ = "6";
+  ipv6 dhcp relay address @ITEM.srvrAddr use-vrf @ITEM.srvrVrf
+   }
+   else {
+       $$isIpDhcpRelay$$ = "4";
+  ip dhcp relay address @ITEM.srvrAddr use-vrf @ITEM.srvrVrf
+   }
+  }
+  else {
+   if (@ITEM.srvrAddr contains ":") {
+       $$isIp6DhcpRelay$$ = "6";
+  ipv6 dhcp relay address @ITEM.srvrAddr
+   }
+   else {
+       $$isIpDhcpRelay$$ = "4";
+  ip dhcp relay address @ITEM.srvrAddr
+   }
+  }
+ }
+}
+
+ if ($$loopbackId$$ != "") {
+   if ($$isIp6DhcpRelay$$ == "6") {
+  ipv6 dhcp relay source-interface loopback$$loopbackId$$
+   }
+   if ($$isIpDhcpRelay$$ == "4") {
+  ip dhcp relay source-interface loopback$$loopbackId$$
+   }
+ }
+    
+ if($$mtu$$ != "" && $$mtu$$ != "1500"){
+  mtu $$mtu$$
+ }
+  fabric forwarding mode anycast-gateway
+  no shutdown
+}
+}
+
+interface nve$$nveId$$
+  member vni $$segmentId$$
+ if ($$enableIR$$ == "true") {
+    ingress-replication protocol bgp
+ }
+ else {
+  if ($$mcastGroup$$ != "") {
+    mcast-group $$mcastGroup$$
+  }
+ }
+if ($$isLayer2Only$$ != "true" && $$suppressArp$$ == "true") {
+    suppress-arp
+}
+
+evpn
+  vni $$segmentId$$ l2
+    rd auto
+ if ($$rtBothAuto$$ == "true") {
+    route-target both auto
+ }
+ else {
+    route-target import auto
+    route-target export auto
+ }
+}
+else {
+# IOS XE handling
+
+if ($$isLayer2Only$$ != "true" && $$dhcpServers$$ != "" ) {
+ $$flagSet$$ = "false";
+ foreach ITEM in $$dhcpServers$$ {
+  if ($$flagSet$$ == "false") {
+ip dhcp snooping vlan $$vlanId$$
+$$flagSet$$ = "true";
+  }
+ }
+}
+
+l2vpn evpn instance $$vlanId$$ vlan-based
+ encapsulation vxlan
+
+vlan configuration $$vlanId$$
+ member evpn-instance $$vlanId$$ vni $$segmentId$$
+
+vlan $$vlanId$$
+ if ($$vlanName$$ != "") {
+ name $$vlanName$$
+ }
+
+if ($$isLayer2Only$$ != "true") {
+interface Vlan$$vlanId$$
+ if ($$intfDescription$$ != "") {
+ description $$intfDescription$$
+ }
+ mac-address $$anycastGMac$$
+ if($$vrfName$$ != "" ){
+ vrf forwarding $$vrfName$$
+ }
+
+ if ($$gatewayIpAddress$$ != "" ) {
+ $$gen_address$$ = evalscript("gen_ip", $$gatewayIpAddress$$)
+ $$gen_mask$$ = evalscript("gen_dot_format_mask", $$gatewayIpAddress$$)
+ ip address $$gen_address$$ $$gen_mask$$
+
+  if ($$secondaryGW1$$ != "" ) {
+ $$gen_address$$ = evalscript("gen_ip", $$secondaryGW1$$)
+ $$gen_mask$$ = evalscript("gen_dot_format_mask", $$secondaryGW1$$)
+ ip address $$gen_address$$ $$gen_mask$$ secondary
+  }
+  if ($$secondaryGW2$$ != "" ) {
+ $$gen_address$$ = evalscript("gen_ip", $$secondaryGW2$$)
+ $$gen_mask$$ = evalscript("gen_dot_format_mask", $$secondaryGW2$$)
+ ip address $$gen_address$$ $$gen_mask$$ secondary
+  }
+  if ($$secondaryGW3$$ != "" ) {
+ $$gen_address$$ = evalscript("gen_ip", $$secondaryGW3$$)
+ $$gen_mask$$ = evalscript("gen_dot_format_mask", $$secondaryGW3$$)
+ ip address $$gen_address$$ $$gen_mask$$ secondary
+  }
+  if ($$secondaryGW4$$ != "" ) {
+ $$gen_address$$ = evalscript("gen_ip", $$secondaryGW4$$)
+ $$gen_mask$$ = evalscript("gen_dot_format_mask", $$secondaryGW4$$)
+ ip address $$gen_address$$ $$gen_mask$$ secondary
+  }
+  if ($$secondaryGW1$$ != "" || $$secondaryGW2$$ != "" || $$secondaryGW3$$ != "" || $$secondaryGW4$$ != "") {
+ no ip redirects
+  }
+  if ($$trmEnabled$$ == "true") {
+ ip pim sparse-mode
+   if ($$igmpVersion$$ == "3") {
+ ip igmp version 3
+   }
+   else {
+    if ($$igmpVersion$$ == "1") {
+ ip igmp version 1
+    }
+   }
+  }
+ }
+
+if($$dhcpServers$$ != "" ){
+ foreach ITEM in $$dhcpServers$$ {
+  if (@ITEM.srvrAddr contains ".") {
+   $$isIpDhcpRelay$$ = "4";
+   if (@ITEM.srvrVrf != "" && @ITEM.srvrVrf != $$vrfName$$) {
+    if (@ITEM.srvrVrf == "management") {
+ ip helper-address vrf Mgmt-vrf @ITEM.srvrAddr
+    }
+    else {
+     if (@ITEM.srvrVrf == "global" || @ITEM.srvrVrf == "default") {
+ ip helper-address global @ITEM.srvrAddr
+     }
+     else {
+ ip helper-address vrf @ITEM.srvrVrf @ITEM.srvrAddr
+     }
+    }
+   }
+   else {
+ ip helper-address @ITEM.srvrAddr
+   }
+  }
+ }
+}
+
+ if ($$loopbackId$$ != "" && $$isIpDhcpRelay$$ == "4") {
+ ip dhcp relay source-interface Loopback$$loopbackId$$
+ }
+
+ if($$gatewayIpV6Address$$ != "" ){
+ foreach ITEM in $$gatewayIpV6Address$$ {
+ ipv6 address @ITEM
+ }
+ }
+}
+
+interface nve$$nveId$$
+ if ($$mcastGroup$$ != "") {
+ member vni $$segmentId$$ mcast-group $$mcastGroup$$
+ }
+ else {
+ member vni $$segmentId$$
+ }
+}
+##
